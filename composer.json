@@ -1,0 +1,25 @@
+{
+    "name": "sunmoon/yii2-phpspreadsheet",
+    "description": "Yii2处理Excel文件， 修改自moonlandsoft/yii2-phpexcel。",
+    "type": "library",
+    "homepage": "https://github.com/arieslee/yii2-phpspreadsheet",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sunmoon",
+            "email": "forphp@qq.com",
+            "homepage": "https://blog.iw3c.com",
+            "role": "Developer"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "yiisoft/yii2": "^2.0.15",
+        "phpoffice/phpspreadsheet": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "sunmoon\\phpspreadsheet\\": ""
+        }
+    }
+}
