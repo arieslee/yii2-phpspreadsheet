@@ -35,8 +35,3 @@ phpunit.phar
 /.vagrant
 environments
 vagrant
-/backend/runtime
-/tool/web/upload
-/backend/web/upload
-/sql
-/common/runtime/db/table
