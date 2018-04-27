@@ -12,7 +12,7 @@ Yii2 处理 Excel 文件， 修改自[moonlandsoft/yii2-phpexcel](https://github
  1. 安装包文件
 
 	``` bash
-	$ composer require sunmoon/yii2-phpspreadsheet
+	$ composer require sunmoon/yii2-phpspreadsheet '*'
 	```
 
 ## 使用
