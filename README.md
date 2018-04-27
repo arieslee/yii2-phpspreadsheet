@@ -19,6 +19,8 @@ Yii2 处理 Excel 文件， 修改自[moonlandsoft/yii2-phpexcel](https://github
 
 1. 代码中使用参见 [moonlandsoft/yii2-phpexcel](https://github.com/moonlandsoft/yii2-phpexcel)
 
+2. 从phpexcel迁移到phpspreadsheet的注意事项，[migration-from-PHPExcel](https://phpspreadsheet.readthedocs.io/en/develop/topics/migration-from-PHPExcel/)
+
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
