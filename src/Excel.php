@@ -220,6 +220,10 @@ use yii\i18n\Formatter;
 class Excel extends \yii\base\Widget
 {
     /**
+     * @var boolean to exit script after export.
+     */
+    public $exit = true;
+    /**
      * @var string mode is an export mode or import mode. valid value are 'export' and 'import'.
      */
     public $mode = 'export';
@@ -568,7 +572,7 @@ class Excel extends \yii\base\Widget
             $path = $this->savePath . '/' . $this->getFileName();
         }
         $objectwriter->save($path);
-        exit();
+        $this->exit && exit();
     }
 
     /**
