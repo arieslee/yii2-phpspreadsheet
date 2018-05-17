@@ -258,7 +258,7 @@ class Excel extends \yii\base\Widget
      */
     public $savePath;
     /**
-     * @var string format for excel to export. Valid value are 'Excel5','Excel2007','Excel2003XML','00Calc','Gnumeric'.
+     * @var string format for excel to export. Valid value are 'Csv','Xml','Xlsx','Xls','Gnumeric','Html','Ods','Pdf','Slk'.
      */
     public $format;
     /**
@@ -565,7 +565,7 @@ class Excel extends \yii\base\Widget
     public function writeFile($sheet)
     {
         if (!isset($this->format))
-            $this->format = 'Excel2007';
+            $this->format = 'Xlsx';
         $objectwriter = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($sheet, $this->format);
         $path = 'php://output';
         if (isset($this->savePath) && $this->savePath != null) {
