@@ -581,7 +581,68 @@ class Excel extends \yii\base\Widget
         $objectwriter->save($path);
         $this->exit && exit();
     }
+    /**
+     * to array
+     * @param $activeSheet
+     * @param null $nullValue
+     * @param bool $calculateFormulas
+     * @param bool $formatData
+     * @param bool $returnCellRef
+     * @return array
+     */
+    public function toArray($activeSheet, $nullValue = null, $calculateFormulas = true, $formatData = true, $returnCellRef = false){
+        if($this->readStartRow && $this->readEndRow){
+            $r = -1;
+            $minCol = 'A';
+            $maxCol = $activeSheet->getHighestColumn(); //总列数
+            $cellCollection = $activeSheet->getCellCollection();
+            $parent = $activeSheet->getParent();
+            $returnValue = [];
+            for ($row = $this->readStartRow; $row <= $this->readEndRow; ++$row) {
+                $rRef = ($returnCellRef) ? $row : ++$r;
+                $c = -1;
+                // Loop through columns in the current row
+                for ($col = $minCol; $col != $maxCol; ++$col) {
+                    $cRef = ($returnCellRef) ? $col : ++$c;
+                    //    Using getCell() will create a new cell if it doesn't already exist. We don't want that to happen
+                    //        so we test and retrieve directly against cellCollection
+                    if ($cellCollection->has($col . $row)) {
+                        // Cell exists
+                        $cell = $cellCollection->get($col . $row);
+                        if ($cell->getValue() !== null) {
+                            if ($cell->getValue() instanceof \PhpOffice\PhpSpreadsheet\RichText\RichText) {
+                                $returnValue[$rRef][$cRef] = $cell->getValue()->getPlainText();
+                            } else {
+                                if ($calculateFormulas) {
+                                    $returnValue[$rRef][$cRef] = $cell->getCalculatedValue();
+                                } else {
+                                    $returnValue[$rRef][$cRef] = $cell->getValue();
+                                }
+                            }
 
+                            if ($formatData) {
+                                $style = $parent->getCellXfByIndex($cell->getXfIndex());
+                                $returnValue[$rRef][$cRef] = \PhpOffice\PhpSpreadsheet\Style\NumberFormat::toFormattedString(
+                                    $returnValue[$rRef][$cRef],
+                                    ($style && $style->getNumberFormat()) ? $style->getNumberFormat()->getFormatCode() : \PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_GENERAL
+                                );
+                            }
+                        } else {
+                            // Cell holds a NULL
+                            $returnValue[$rRef][$cRef] = $nullValue;
+                        }
+                    } else {
+                        // Cell doesn't exist
+                        $returnValue[$rRef][$cRef] = $nullValue;
+                    }
+                }
+            }
+            // Return
+            return $returnValue;
+        }else{
+            return $activeSheet->toArray($nullValue, $calculateFormulas, $formatData, $returnCellRef);
+        }
+    }
     /**
      * reading the xls file
      */
@@ -590,11 +651,13 @@ class Excel extends \yii\base\Widget
         if (!isset($this->format))
             $this->format = \PhpOffice\PhpSpreadsheet\IOFactory::identify($fileName);
         $objectreader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($this->format);
-        $objectPhpExcel = $objectreader->load($fileName);
         //2018-08-21增加按行读取的功能
-        $readFilter = new \sunmoon\phpspreadsheet\reader\Filter($this->readStartRow, $this->readEndRow);
-        $objectreader->setReadDataOnly(true); //只读数据
-        $objectreader->setReadFilter($readFilter);
+        if($this->readStartRow && $this->readEndRow){
+            $readFilter = new \sunmoon\phpspreadsheet\reader\Filter($this->readStartRow, $this->readEndRow);
+            $objectreader->setReadDataOnly(true); //只读数据
+            $objectreader->setReadFilter($readFilter);
+        }
+        $objectPhpExcel = $objectreader->load($fileName);
         $sheetCount = $objectPhpExcel->getSheetCount();
         $sheetDatas = [];
         if ($sheetCount > 1) {
@@ -605,7 +668,7 @@ class Excel extends \yii\base\Widget
                     }
                     $objectPhpExcel->setActiveSheetIndexByName($this->getOnlySheet);
                     $indexed = $this->getOnlySheet;
-                    $sheetDatas[$indexed] = $objectPhpExcel->getActiveSheet()->toArray(null, true, true, true);
+                    $sheetDatas[$indexed] = $this->toArray($objectPhpExcel->getActiveSheet()); //add on
                     if ($this->setFirstRecordAsKeys) {
                         $sheetDatas[$indexed] = $this->executeArrayLabel($sheetDatas[$indexed]);
                     }
@@ -621,7 +684,7 @@ class Excel extends \yii\base\Widget
                 } else {
                     $objectPhpExcel->setActiveSheetIndexByName($sheetName);
                     $indexed = $this->setIndexSheetByName==true ? $sheetName : $sheetIndex;
-                    $sheetDatas[$indexed] = $objectPhpExcel->getActiveSheet()->toArray(null, true, true, true);
+                    $sheetDatas[$indexed] = $this->toArray($objectPhpExcel->getActiveSheet()); //add on
                     if ($this->setFirstRecordAsKeys) {
                         $sheetDatas[$indexed] = $this->executeArrayLabel($sheetDatas[$indexed]);
                     }
@@ -636,7 +699,7 @@ class Excel extends \yii\base\Widget
                 }
             }
         } else {
-            $sheetDatas = $objectPhpExcel->getActiveSheet()->toArray(null, true, true, true);
+            $sheetDatas = $this->toArray($objectPhpExcel->getActiveSheet()); //add on
             if ($this->setFirstRecordAsKeys) {
                 $sheetDatas = $this->executeArrayLabel($sheetDatas);
             }
