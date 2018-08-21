@@ -10,7 +10,13 @@ namespace sunmoon\phpspreadsheet\reader;
 
 
 class Filter implements \PhpOffice\PhpSpreadsheet\Reader\IReadFilter{
+    /**
+     * @var int
+     */
     public $startRow = 1;
+    /**
+     * @var int
+     */
     public $endRow = 0;
     public function readCell($column, $row, $worksheetName = '') {
         //如果不设置endRow，那就读取全部数据
