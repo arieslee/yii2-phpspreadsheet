@@ -300,7 +300,14 @@ class Excel extends \yii\base\Widget
      * instance. If this property is not set, the "formatter" application component will be used.
      */
     public $formatter;
-
+    /**
+     * @var int
+     */
+    public $readStartRow = 1;
+    /**
+     * @var int
+     */
+    public $readEndRow = 0;
     /**
      * (non-PHPdoc)
      * @see \yii\base\BaseObject::init()
@@ -584,7 +591,10 @@ class Excel extends \yii\base\Widget
             $this->format = \PhpOffice\PhpSpreadsheet\IOFactory::identify($fileName);
         $objectreader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($this->format);
         $objectPhpExcel = $objectreader->load($fileName);
-
+        //2018-08-21增加按行读取的功能
+        $readFilter = new \sunmoon\phpspreadsheet\reader\Filter($this->readStartRow, $this->readEndRow);
+        $objectreader->setReadDataOnly(true); //只读数据
+        $objectreader->setReadFilter($readFilter);
         $sheetCount = $objectPhpExcel->getSheetCount();
 
         $sheetDatas = [];
