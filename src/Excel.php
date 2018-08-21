@@ -596,7 +596,6 @@ class Excel extends \yii\base\Widget
         $objectreader->setReadDataOnly(true); //只读数据
         $objectreader->setReadFilter($readFilter);
         $sheetCount = $objectPhpExcel->getSheetCount();
-
         $sheetDatas = [];
 
         if ($sheetCount > 1) {
@@ -617,6 +616,7 @@ class Excel extends \yii\base\Widget
                     if (!empty($this->leaveRecordByIndex)) {
                         $sheetDatas[$indexed] = $this->executeLeaveRecords($sheetDatas[$indexed], $this->leaveRecordByIndex);
                     }
+                    $objectPhpExcel->disconnectWorksheets();
                     return $sheetDatas[$indexed];
                 } else {
                     $objectPhpExcel->setActiveSheetIndexByName($sheetName);
@@ -631,6 +631,7 @@ class Excel extends \yii\base\Widget
                     if (!empty($this->leaveRecordByIndex) && isset($this->leaveRecordByIndex[$indexed]) && is_array($this->leaveRecordByIndex[$indexed])) {
                         $sheetDatas[$indexed] = $this->executeLeaveRecords($sheetDatas[$indexed], $this->leaveRecordByIndex[$indexed]);
                     }
+                    $objectPhpExcel->disconnectWorksheets();
                 }
             }
         } else {
@@ -644,8 +645,8 @@ class Excel extends \yii\base\Widget
             if (!empty($this->leaveRecordByIndex)) {
                 $sheetDatas = $this->executeLeaveRecords($sheetDatas, $this->leaveRecordByIndex);
             }
+            $objectPhpExcel->disconnectWorksheets();//每次读取文件后都要利用disconnectWorksheets方法清理phpspreadsheet的内存
         }
-
         return $sheetDatas;
     }
 
