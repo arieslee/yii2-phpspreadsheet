@@ -275,6 +275,10 @@ class Excel extends \yii\base\Widget
      */
     public $setFirstRecordAsKeys = true;
     /**
+     * @var int 第一条记录的索引
+     */
+    public $firstRecordIndex = 0;
+    /**
      * @var boolean to set the sheet index by sheet name or array result if the sheet not only one.
      */
     public $setIndexSheetByName = false;
@@ -408,7 +412,7 @@ class Excel extends \yii\base\Widget
      */
     public function executeArrayLabel($sheetData)
     {
-        $keys = ArrayHelper::remove($sheetData, '1');
+        $keys = ArrayHelper::remove($sheetData, $this->firstRecordIndex);
 
         $new_data = [];
 
