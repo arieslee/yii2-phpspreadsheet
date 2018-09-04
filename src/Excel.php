@@ -910,6 +910,16 @@ class Excel extends \yii\base\Widget
     }
 
     /**
+     * 预载入文件
+     * @param $fileName
+     * @param array $config
+     * @return string
+     */
+    public static function load($fileName, $config = []){
+        $config = ArrayHelper::merge(['mode' => 'load', 'fileName' => $fileName, 'asArray' => true], $config);
+        return self::widget($config);
+    }
+    /**
      * @param array $config
      * @return string
      * @throws InvalidConfigException
