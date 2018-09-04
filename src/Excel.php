@@ -313,6 +313,16 @@ class Excel extends \yii\base\Widget
      */
     public $readEndRow = 0;
     /**
+     * 是否load过
+     * @var array
+     */
+    private static $_loaded = [];
+    /**
+     * 文件行数
+     * @var
+     */
+    public static $highestRows;
+    /**
      * (non-PHPdoc)
      * @see \yii\base\BaseObject::init()
      */
@@ -647,11 +657,16 @@ class Excel extends \yii\base\Widget
             return $activeSheet->toArray($nullValue, $calculateFormulas, $formatData, $returnCellRef);
         }
     }
+
     /**
-     * reading the xls file
+     * 载入文件
+     * @param $fileName
+     * @return array|mixed
      */
-    public function readFile($fileName)
-    {
+    public function loadFile($fileName){
+        if(isset(self::$_loaded[$fileName])){
+            return self::$_loaded[$fileName];
+        }
         if (!isset($this->format))
             $this->format = \PhpOffice\PhpSpreadsheet\IOFactory::identify($fileName);
         $objectreader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($this->format);
@@ -662,6 +677,39 @@ class Excel extends \yii\base\Widget
             $objectreader->setReadFilter($readFilter);
         }
         $objectPhpExcel = $objectreader->load($fileName);
+        self::$highestRows = [];
+        $sheetCount = $objectPhpExcel->getSheetCount();
+        if ($sheetCount > 1) {
+            foreach ($objectPhpExcel->getSheetNames() as $sheetIndex => $sheetName) {
+                if (isset($this->getOnlySheet) && $this->getOnlySheet != null) {
+                    $indexed = $this->getOnlySheet;
+                    self::$highestRows[$indexed] = $objectPhpExcel->getActiveSheet()->getHighestRow();
+                    //每次读取文件后都要利用disconnectWorksheets方法清理phpspreadsheet的内存
+                    $objectPhpExcel->disconnectWorksheets();
+                    return self::$highestRows[$indexed];
+                } else {
+                    $objectPhpExcel->setActiveSheetIndexByName($sheetName);
+                    $indexed = $this->setIndexSheetByName==true ? $sheetName : $sheetIndex;
+                    self::$highestRows[$indexed] = $objectPhpExcel->getActiveSheet()->getHighestRow();
+                    //每次读取文件后都要利用disconnectWorksheets方法清理phpspreadsheet的内存
+                    $objectPhpExcel->disconnectWorksheets();
+                }
+            }
+        }else{
+            self::$highestRows = $objectPhpExcel->getActiveSheet()->getHighestRow();
+            //每次读取文件后都要利用disconnectWorksheets方法清理phpspreadsheet的内存
+            $objectPhpExcel->disconnectWorksheets();
+        }
+        self::$_loaded[$fileName] = $objectPhpExcel;
+        unset($objectPhpExcel);
+        return self::$_loaded[$fileName];
+    }
+    /**
+     * reading the xls file
+     */
+    public function readFile($fileName)
+    {
+        $objectPhpExcel = $this->loadFile($fileName);
         $sheetCount = $objectPhpExcel->getSheetCount();
         $sheetDatas = [];
         if ($sheetCount > 1) {
@@ -771,6 +819,17 @@ class Excel extends \yii\base\Widget
                 return $datas;
             } else {
                 return $this->readFile($this->fileName);
+            }
+        }
+        elseif ($this->mode == 'load'){
+            if (is_array($this->fileName)) {
+                $datas = [];
+                foreach ($this->fileName as $key => $filename) {
+                    $datas[$key] = $this->loadFile($filename);
+                }
+                return $datas;
+            } else {
+                return $this->loadFile($this->fileName);
             }
         }
     }
