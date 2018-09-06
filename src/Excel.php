@@ -599,6 +599,7 @@ class Excel extends \yii\base\Widget
             $r = -1;
             $minCol = 'A';
             $maxCol = $activeSheet->getHighestColumn(); //总列数
+            $maxCol++ ;
             $cellCollection = $activeSheet->getCellCollection();
             $parent = $activeSheet->getParent();
             $returnValue = [];
