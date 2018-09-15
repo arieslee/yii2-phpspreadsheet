@@ -4,6 +4,7 @@ use yii\helpers\ArrayHelper;
 use yii\base\InvalidConfigException;
 use yii\base\InvalidParamException;
 use yii\i18n\Formatter;
+use yii\helpers\Json;
 /**
  * Excel Widget for generate Excel File or for load Excel File.
  *
@@ -275,6 +276,11 @@ class Excel extends \yii\base\Widget
      */
     public $setFirstRecordAsKeys = true;
     /**
+     * 储存文件的路径
+     * @var null
+     */
+    public $storeFile = null;
+    /**
      * @var int 第一条记录的索引
      */
     public $firstRecordIndex = 0;
@@ -312,6 +318,11 @@ class Excel extends \yii\base\Widget
      * @var int
      */
     public $readEndRow = 0;
+    /**
+     * 是否丢弃作为键值的行的数据
+     * @var bool
+     */
+    public $dropKeysRow = false;
     /**
      * (non-PHPdoc)
      * @see \yii\base\BaseObject::init()
@@ -412,18 +423,61 @@ class Excel extends \yii\base\Widget
      */
     public function executeArrayLabel($sheetData)
     {
-        $keys = ArrayHelper::remove($sheetData, $this->firstRecordIndex);
-
-        $new_data = [];
+        if($this->isPageRead()){
+            $keys = $this->readStoreFile();
+            if(!$keys && $this->isBeginning()){
+                $keys = ArrayHelper::remove($sheetData, $this->firstRecordIndex);
+                $this->writeStoreFile($keys);
+            }
+        }else{
+            $keys = ArrayHelper::remove($sheetData, $this->firstRecordIndex);
+        }
+        if(!$keys){
+            throw new InvalidParamException('Unable to get valid keys');
+        }
+        $newData = [];
 
         foreach ($sheetData as $values)
         {
-            $new_data[] = array_combine($keys, $values);
+            $newData[] = array_combine($keys, $values);
         }
-
-        return $new_data;
+        //读取第一页的数据时，是否把作为数组键值的行去掉
+        if($newData && $this->dropKeysRow && $this->isBeginning()){
+            unset($newData[0]);
+            return array_values($newData);
+        }
+        return $newData;
     }
 
+    /**
+     * 是否为开始
+     * @return bool
+     */
+    public function isBeginning(){
+        return ($this->readStartRow <= 1);
+    }
+    /**
+     * 写入储存文件
+     * @param $data
+     * @return bool|int
+     */
+    public function writeStoreFile($data){
+        if(is_array($data)){
+            $data = Json::encode($data);
+        }
+        return file_put_contents($this->storeFile, $data);
+    }
+    /**
+     * 读取储存文件
+     * @return bool|mixed
+     */
+    public function readStoreFile(){
+        $content = file_get_contents($this->storeFile);
+        if(!$content){
+            return false;
+        }
+        return json_decode($content, true);
+    }
     /**
      * Leave record with same index number.
      * @param array $sheetData
@@ -683,7 +737,7 @@ class Excel extends \yii\base\Widget
             $this->format = \PhpOffice\PhpSpreadsheet\IOFactory::identify($fileName);
         $objectreader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($this->format);
         //2018-08-21增加按行读取的功能
-        if($this->readStartRow && $this->readEndRow){
+        if($this->isPageRead()){
             $readFilter = new \sunmoon\phpspreadsheet\reader\Filter($this->readStartRow, $this->readEndRow);
             $objectreader->setReadDataOnly(true); //只读数据
             $objectreader->setReadFilter($readFilter);
@@ -790,6 +844,17 @@ class Excel extends \yii\base\Widget
         }
         elseif ($this->mode == 'import')
         {
+            //验证读取的行数是否正确
+            $this->validateReadRow();
+            //把首行作为数组的key并且分页读取就必须设置storeFile
+            if($this->setFirstRecordAsKeys === true && !$this->isPageRead()){
+                if(!$this->storeFile){
+                    throw new InvalidConfigException('Please set storeFile');
+                }
+                if(!file_exists($this->storeFile)){
+                    throw new InvalidConfigException('The store file is not exists');
+                }
+            }
             if (is_array($this->fileName)) {
                 $datas = [];
                 foreach ($this->fileName as $key => $filename) {
@@ -802,6 +867,27 @@ class Excel extends \yii\base\Widget
         }
     }
 
+    /**
+     * 是不是分页读取
+     * @return bool
+     */
+    public function isPageRead(){
+        if($this->readStartRow >= 0 && $this->readEndRow > 0){
+            return true;
+        }
+        return false;
+    }
+    /**
+     * 验证读取的行数
+     * @return bool
+     * @throws InvalidConfigException
+     */
+    public function validateReadRow(){
+        if($this->readEndRow > 0 && $this->readEndRow < $this->readStartRow){
+            throw new InvalidConfigException('"readEndRow" must be greater than "readStartRow"');
+        }
+        return true;
+    }
     /**
      * Exporting data into an excel file.
      *
@@ -873,7 +959,11 @@ class Excel extends \yii\base\Widget
      */
     public static function import($fileName, $config=[])
     {
-        $config = ArrayHelper::merge(['mode' => 'import', 'fileName' => $fileName, 'asArray' => true], $config);
+        $config = ArrayHelper::merge([
+            'mode' => 'import',
+            'fileName' => $fileName,
+            'asArray' => true,
+        ], $config);
         return self::widget($config);
     }
 
