@@ -746,7 +746,7 @@ class Excel extends \yii\base\Widget
         $sheetCount = $objectPhpExcel->getSheetCount();
         $sheetDatas = [];
         if ($sheetCount != 1) {
-            throw new InvalidParamException('Sheet count is incorrect, it can only be 1');
+            throw new \yii\base\InvalidValueException('Sheet count is incorrect, it can only be 1');
         } else {
             $sheetDatas = $this->toArray($objectPhpExcel->getActiveSheet()); //add on
             if ($this->setFirstRecordAsKeys) {
