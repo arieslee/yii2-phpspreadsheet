@@ -745,44 +745,8 @@ class Excel extends \yii\base\Widget
         $objectPhpExcel = $objectreader->load($fileName);
         $sheetCount = $objectPhpExcel->getSheetCount();
         $sheetDatas = [];
-        if ($sheetCount > 1) {
-            foreach ($objectPhpExcel->getSheetNames() as $sheetIndex => $sheetName) {
-                if (isset($this->getOnlySheet) && $this->getOnlySheet != null) {
-                    if(!$objectPhpExcel->getSheetByName($this->getOnlySheet)) {
-                        return $sheetDatas;
-                    }
-                    $objectPhpExcel->setActiveSheetIndexByName($this->getOnlySheet);
-                    $indexed = $this->getOnlySheet;
-                    $sheetDatas[$indexed] = $this->toArray($objectPhpExcel->getActiveSheet()); //add on
-                    if ($this->setFirstRecordAsKeys) {
-                        $sheetDatas[$indexed] = $this->executeArrayLabel($sheetDatas[$indexed]);
-                    }
-                    if (!empty($this->getOnlyRecordByIndex)) {
-                        $sheetDatas[$indexed] = $this->executeGetOnlyRecords($sheetDatas[$indexed], $this->getOnlyRecordByIndex);
-                    }
-                    if (!empty($this->leaveRecordByIndex)) {
-                        $sheetDatas[$indexed] = $this->executeLeaveRecords($sheetDatas[$indexed], $this->leaveRecordByIndex);
-                    }
-                    //每次读取文件后都要利用disconnectWorksheets方法清理phpspreadsheet的内存
-                    $objectPhpExcel->disconnectWorksheets();
-                    return $sheetDatas[$indexed];
-                } else {
-                    $objectPhpExcel->setActiveSheetIndexByName($sheetName);
-                    $indexed = $this->setIndexSheetByName==true ? $sheetName : $sheetIndex;
-                    $sheetDatas[$indexed] = $this->toArray($objectPhpExcel->getActiveSheet()); //add on
-                    if ($this->setFirstRecordAsKeys) {
-                        $sheetDatas[$indexed] = $this->executeArrayLabel($sheetDatas[$indexed]);
-                    }
-                    if (!empty($this->getOnlyRecordByIndex) && isset($this->getOnlyRecordByIndex[$indexed]) && is_array($this->getOnlyRecordByIndex[$indexed])) {
-                        $sheetDatas = $this->executeGetOnlyRecords($sheetDatas, $this->getOnlyRecordByIndex[$indexed]);
-                    }
-                    if (!empty($this->leaveRecordByIndex) && isset($this->leaveRecordByIndex[$indexed]) && is_array($this->leaveRecordByIndex[$indexed])) {
-                        $sheetDatas[$indexed] = $this->executeLeaveRecords($sheetDatas[$indexed], $this->leaveRecordByIndex[$indexed]);
-                    }
-                    //每次读取文件后都要利用disconnectWorksheets方法清理phpspreadsheet的内存
-                    $objectPhpExcel->disconnectWorksheets();
-                }
-            }
+        if ($sheetCount != 1) {
+            throw new InvalidParamException('Sheet count is incorrect, it can only be 1');
         } else {
             $sheetDatas = $this->toArray($objectPhpExcel->getActiveSheet()); //add on
             if ($this->setFirstRecordAsKeys) {
