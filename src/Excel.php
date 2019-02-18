@@ -221,6 +221,10 @@ use yii\helpers\Json;
 class Excel extends \yii\base\Widget
 {
     /**
+     * @version 1.2.0
+     */
+    const VERSION = '1.2.0';
+    /**
      * @var boolean to exit script after export.
      */
     public $exit = true;
@@ -324,6 +328,11 @@ class Excel extends \yii\base\Widget
      */
     public $dropKeysRow = false;
     /**
+     * executeColumns方法中迭代处理的callback
+     * @var null
+     */
+    public $exportIterationCallback = null;
+    /**
      * (non-PHPdoc)
      * @see \yii\base\BaseObject::init()
      */
@@ -392,6 +401,7 @@ class Excel extends \yii\base\Widget
             $isPlus = false;
             $colplus = 0;
             $colnum = 1;
+            $currentValue = [];
             foreach ($columns as $key=>$column) {
                 $col = '';
                 if ($colnum > $char) {
@@ -410,7 +420,14 @@ class Excel extends \yii\base\Widget
                 }
                 //$activeSheet->setCellValue($col.$row,$column_value);
                 $activeSheet->getCell($col.$row)->setValue($column_value);
+                $currentValue[] = $column_value;
                 $colnum++;
+            }
+            if($this->exportIterationCallback){
+                call_user_func_array($this->exportIterationCallback, [
+                    'row'=>$row,
+                    'value' => $currentValue,
+                ]);
             }
             $row++;
         }
